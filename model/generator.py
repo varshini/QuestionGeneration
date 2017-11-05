@@ -44,15 +44,15 @@ def sentence_classifier_generator(fp, batch_size, max_sentence_len, output_size)
             Y.append(y)
             paragraph_len += 1
 
-    if count < batch_size and count > 0:
+    if count < batch_size and count > 0 and sequence_lengths[0] > 0:
         for i in range(count):
             for j in range(max_paragraph_len - sequence_lengths[i]):
                 batch_X[i].append([0] * max_sentence_len)
                 y = np.zeros((output_size,))
                 y[0] = 1
                 batch_Y[i].append(y)
-        batch_X = np.array(batch_X, dtype=np.int32) + np.zeros((batch_size - count, max_paragraph_len, max_sentence_len))
+        batch_X = np.concatenate((np.array(batch_X, dtype=np.int32), np.zeros((batch_size - count, max_paragraph_len, max_sentence_len))), axis=0)
         y = np.zeros((batch_size - count, max_paragraph_len, output_size))
         y[:,:,0] = 1
-        batch_Y = np.array(batch_Y, dtype=np.int32) + y
+        batch_Y = np.concatenate((np.array(batch_Y, dtype=np.int32), y), axis=0)
         yield np.array(batch_X, dtype=np.int32), np.array(batch_Y, dtype=np.int32), sequence_lengths, max_paragraph_len

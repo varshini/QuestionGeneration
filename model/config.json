@@ -9,7 +9,6 @@
   "lstm_hidden_size": 100,
   "fc_hidden_size": 50,
   "input_size": 50,
-  "max_paragraph_len": 27,
   "max_sentence_len": 50,
   "output_size": 2,
   "activation": "tanh",

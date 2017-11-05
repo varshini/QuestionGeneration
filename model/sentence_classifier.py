@@ -33,7 +33,6 @@ class Classifier:
         self.input_size = data["input_size"]
         self.output_size = data["output_size"]
         self.max_sentence_len = data["max_sentence_len"]
-        self.max_paragraph_len = data["max_paragraph_len"]
         self.activation = data["activation"]
         self.optimizer = data["optimizer"]
         self.learning_rate = data["learning_rate"]
@@ -166,12 +165,13 @@ class Classifier:
                             l, pred = sess.run([loss, predictions], feed_dict=dev_feed_dict)
                             dev_loss += l
                             dev_cm += self.get_confusion_matrix(pred, batch_output, batch_sequence_lengths, max_paragraph_len)
-                            dev_size += len(batch_output)
+                            dev_size += np.sum(batch_sequence_lengths)
                         precision = dev_cm[1][1]/(dev_cm[1][1] + dev_cm[0][1])
                         recall = dev_cm[1][1]/(dev_cm[1][1] + dev_cm[1][0])
                         accuracy = (dev_cm[0][0]+dev_cm[1][1])/(dev_cm[0][0]+dev_cm[1][1]+dev_cm[0][1]+dev_cm[1][0])
                         print "Dev Batch loss = {} Accuracy = {:.3f} Precision = {:.3f} Recall = {:.3f}".format(dev_loss/dev_size, accuracy, precision, recall)
                         print dev_cm
+                        print "dev sent size = {}".format(dev_size)
 
                         test_loss = 0.
                         test_cm = np.zeros((self.output_size, self.output_size))
@@ -185,22 +185,27 @@ class Classifier:
                             l, pred = sess.run([loss, predictions], feed_dict=test_feed_dict)
                             test_loss += l
                             test_cm += self.get_confusion_matrix(pred, batch_output, batch_sequence_lengths, max_paragraph_len)
-                            test_size += len(batch_output)
+                            test_size += np.sum(batch_sequence_lengths)
                         precision = test_cm[1][1] / (test_cm[1][1] + test_cm[0][1])
                         recall = test_cm[1][1] / (test_cm[1][1] + test_cm[1][0])
                         accuracy = (test_cm[0][0] + test_cm[1][1]) / (test_cm[0][0] + test_cm[1][1] + test_cm[0][1] + test_cm[1][0])
                         print "Test Batch loss = {} Accuracy = {:.3f} Precision = {:.3f} Recall = {:3f}".format(test_loss/test_size, accuracy, precision, recall)
                         print test_cm
+                        print "test sent size = {}".format(test_size)
 
     def get_confusion_matrix(self, predictions, labels, sequence_lengths, max_paragraph_len):
         matrix = np.zeros((self.output_size, self.output_size))
         predictions = predictions.reshape(self.batch_size, max_paragraph_len, self.output_size)
+        seq_size = 0
         for b in range(self.batch_size):
             if sequence_lengths[b] == 0:
                 continue
             max_pred = predictions[b][:sequence_lengths[b]]
             max_labels = labels[b][:sequence_lengths[b]]
-            matrix += confusion_matrix(np.argmax(max_labels, 1), np.argmax(max_pred, 1))
+            seq_size += sequence_lengths[b]
+            matrix += confusion_matrix(np.argmax(max_labels, 1), np.argmax(max_pred, 1), labels=[0,1])
+            assert sequence_lengths[b] == np.sum(confusion_matrix(np.argmax(max_labels, 1), np.argmax(max_pred, 1), labels=[0,1]))
+        assert seq_size == np.sum(matrix)
         return matrix
 
 
