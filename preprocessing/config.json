@@ -1,0 +1,14 @@
+{
+  "vocab_size": 94816,
+  "max_sentence_length": 50,
+  "max_paragraph_length": 27,
+  "squad_train_file": "../../squad_dataset/train-v1.1.json",
+  "squad_dev_file": "../../squad_dataset/dev-v1.1.json",
+  "sentlevel_train_file": "../../data/sentlevel_squad_train.txt",
+  "sentlevel_dev_file": "../../data/sentlevel_squad_dev.txt",
+  "sentlevel_test_file": "../../data/sentlevel_squad_test.txt",
+  "vocab_file": "../../data/vocabulary.json",
+  "hashed_train_file": "../../data/sentlevel_squad_train.hashed",
+  "hashed_dev_file": "../../data/sentlevel_squad_dev.hashed",
+  "hashed_test_file": "../../data/sentlevel_squad_test.hashed"
+}
