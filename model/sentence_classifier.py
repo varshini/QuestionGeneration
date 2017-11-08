@@ -30,6 +30,7 @@ class Classifier:
         self.vocabulary_size = data["vocab_size"]
         self.lstm_hidden_size = data["lstm_hidden_size"]
         self.fc_hidden_size = data["fc_hidden_size"]
+        self.n_fc = data["n_fc"]
         self.input_size = data["input_size"]
         self.output_size = data["output_size"]
         self.max_sentence_len = data["max_sentence_len"]
@@ -95,14 +96,18 @@ class Classifier:
             self.embeddings.get_shape(), input_embed.get_shape(), sum_embed.get_shape(),
             context_rep_flat.get_shape()
         )
-        # Fully connected layer
-        if self.activation == "tanh":
-            act = tf.nn.tanh
-        else:
-            act = tf.nn.sigmoid
-        dense = tf.layers.dense(inputs=context_rep_flat, units=self.fc_hidden_size, activation=act)
+        dense_input = context_rep_flat
+        for i in range(self.n_fc):
+            # Fully connected layer
+            if self.activation == "tanh":
+                act = tf.nn.tanh
+            else:
+                act = tf.nn.sigmoid
+            dense_output = tf.layers.dense(inputs=dense_input, units=self.fc_hidden_size[i], activation=act)
+            dense_input = dense_output
 
-        out = tf.matmul(dense, self.weights['out']) + self.biases['out']
+
+        out = tf.matmul(dense_output, self.weights['out']) + self.biases['out']
         return out
 
 
@@ -110,7 +115,7 @@ class Classifier:
         # Define weights
         self.weights = {
             # Hidden layer weights => 2*n_hidden because of forward + backward cells
-            'out': tf.Variable(tf.random_normal([self.fc_hidden_size, self.output_size]))
+            'out': tf.Variable(tf.random_normal([self.fc_hidden_size[-1], self.output_size]))
         }
         self.biases = {
             'out': tf.Variable(tf.random_normal([self.output_size]))
@@ -203,8 +208,9 @@ class Classifier:
             max_pred = predictions[b][:sequence_lengths[b]]
             max_labels = labels[b][:sequence_lengths[b]]
             seq_size += sequence_lengths[b]
-            matrix += confusion_matrix(np.argmax(max_labels, 1), np.argmax(max_pred, 1), labels=[0,1])
-            assert sequence_lengths[b] == np.sum(confusion_matrix(np.argmax(max_labels, 1), np.argmax(max_pred, 1), labels=[0,1]))
+            cm = confusion_matrix(np.argmax(max_labels, 1), np.argmax(max_pred, 1), labels=[0,1])
+            matrix += cm
+            assert sequence_lengths[b] == np.sum(cm)
         assert seq_size == np.sum(matrix)
         return matrix
 
